@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -28,31 +29,49 @@ namespace ContosoCrafts.WebSite.Services
                 });
         }
 
-        public void AddRating(string productId, int rating)
+        public int AddRating(string productId, int rating)
         {
             var products = GetProducts();
 
-            if (products.First(x => x.Id == productId).Ratings == null)
-            {
-                products.First(x => x.Id == productId).Ratings = new int[] { rating };
-            }
-            else
-            {
-                var ratings = products.First(x => x.Id == productId).Ratings.ToList();
-                ratings.Add(rating);
-                products.First(x => x.Id == productId).Ratings = ratings.ToArray();
-            }
+            int errcode = 0;
 
-            using var outputStream = File.OpenWrite(JsonFileName);
+            try
+            {
+                //LINQ
+                var query = products.First(x => x.Id == productId);
 
-            JsonSerializer.Serialize<IEnumerable<Product>>(
-                new Utf8JsonWriter(outputStream, new JsonWriterOptions
+                if (query.Ratings == null)
                 {
-                    SkipValidation = true,
-                    Indented = true
-                }),
-                products
-            );
+                    query.Ratings = new int[] { rating };
+                }
+                else
+                {
+                    var ratings = query.Ratings.ToList();
+                    ratings.Add(rating);
+                    query.Ratings = ratings.ToArray();
+                }
+
+                using var outputStream = File.OpenWrite(JsonFileName);
+
+                JsonSerializer.Serialize<IEnumerable<Product>>(
+                    new Utf8JsonWriter(outputStream, new JsonWriterOptions
+                    {
+                        SkipValidation = true,
+                        Indented = true
+                    }),
+                    products
+                );
+
+                return errcode;
+            }
+            catch (Exception ex)
+            {
+                errcode = 1;
+                return errcode;
+
+            }
+
+
         }
     }
 }
